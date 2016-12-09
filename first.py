@@ -12,24 +12,18 @@ import flask_bootstrap
 
 app = flask.Flask(__name__)
 bootstrap = flask_bootstrap.Bootstrap(app)
-manager = flask_script.Manager(app)
 
-# type:name, the name must the same as function argument,
-# for it will pass as keyword argument
-@app.route('/str/<string:path>')        # string accept any char except /
-def index(path):
-    return "<b>{}</b>".format(path)
-@app.route('/float/<float:num>')    # float accept [0-9]*\.[0-9]*
-def flo(num):
-    return "<b>{}</b>".format(num)
-@app.route('/int/<int:num>')    # int accept [0-9]*
-def intt(num):
-    return "<b>{}</b>".format(num)
-@app.route('/path/<path:pathname>') # path accept any str including /
-def path(pathname):
-    flask.make_response()
-    return "<b>{}</b>".format(pathname)
+@app.route('/<string:name>')
+def index(name):
+    return flask.render_template('user.html', name=name)
+@app.errorhandler(404)      # error handler for 404 error
+def page_not_found(error):
+    # error is werkzeug.exceptions.NotFound, have code and description attr
+    return flask.render_template('404.html')
+@app.errorhandler(500)
+def internal_error(error):
+    # error is werkzeug.exceptions.InternalServerError, have code and description attr
+    return flask.render_template('500.html'), 500
 
 if __name__ == '__main__':
-    manager.run()
-    # app.run(debug=True)
+    app.run(debug=True)
