@@ -8,6 +8,12 @@
 	<div class="page-header">
 		<h1>
 			Hello {% if name %}{{ name }}{% else %}Stranger{% endif %}
+			<br />
+			{% if known %}
+				Happy to see you again!
+			{% else %}
+				Nice to meet you!
+			{% endif %}
 		</h1>
 	</div>
 	<p>current time is: {{ moment().format('LLL', refresh=True) }}</p>
