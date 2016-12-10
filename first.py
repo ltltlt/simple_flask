@@ -11,8 +11,12 @@ import flask_script
 import flask_bootstrap
 import flask_moment
 import datetime
+import flask_wtf
+import wtforms
+from wtforms import validators
 
 app = flask.Flask(__name__)
+app.config['SECRET_KEY'] = 'you can never belive it'
 bootstrap = flask_bootstrap.Bootstrap(app)
 
 m = flask_moment.Moment(app)
@@ -21,10 +25,25 @@ m = flask_moment.Moment(app)
 
 manager = flask_script.Manager(app)
 
-@app.route('/')
+class loginForm(flask_wtf.FlaskForm):
+    name = wtforms.StringField('Input your name',
+            validators = [validators.Required()])
+    password = wtforms.PasswordField('Input your password',
+            validators = [validators.Required()])
+    submit = wtforms.SubmitField('Submit')
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
+    form = loginForm()
+    if form.validate_on_submit():
+        old_name = flask.session['name']
+        if old_name and old_name != form.name.data:
+            flask.flash('It seems like you change your name')
+        flask.session['name'] = form.name.data
+        form.name.data = ''     # clear name
+        return flask.redirect(flask.url_for('index'))
     return flask.render_template('index.html', 
-            current_time=datetime.datetime.utcnow())
+            form = form, name=flask.session.get('name'))
 @app.route('/user/<string:user_name>')
 def user(user_name):
     return flask.render_template('user.html', user_name=user_name)
