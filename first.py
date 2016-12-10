@@ -9,13 +9,24 @@
 import flask
 import flask_script
 import flask_bootstrap
+import flask_moment
+import datetime
 
 app = flask.Flask(__name__)
 bootstrap = flask_bootstrap.Bootstrap(app)
+
+m = flask_moment.Moment(app)
+# then the template can use moment, this is a type 
+# which exactly is flask_moment._moment
+
 manager = flask_script.Manager(app)
 
-@app.route('/<string:user_name>')
-def index(user_name):
+@app.route('/')
+def index():
+    return flask.render_template('index.html', 
+            current_time=datetime.datetime.utcnow())
+@app.route('/user/<string:user_name>')
+def user(user_name):
     return flask.render_template('user.html', user_name=user_name)
 @app.errorhandler(404)      # error handler for 404 error
 def page_not_found(error):
