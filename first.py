@@ -15,7 +15,10 @@ import flask_wtf
 import wtforms
 from wtforms import validators
 import flask_sqlalchemy
+import flask_migrate
 import os
+import flask_mail
+import threading
 
 app = flask.Flask(__name__)
 app.config['SECRET_KEY'] = 'you can never belive it'
@@ -33,6 +36,33 @@ app.config['SQLALCHEMY_DATABASE_URI']= \
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = flask_sqlalchemy.SQLAlchemy(app)
+migrate = flask_migrate.Migrate(app, db)
+manager.add_command('db', flask_migrate.MigrateCommand)
+
+# email
+app.config['MAIL_SERVER'] = 'smtp.qq.com'
+app.config['MAIL_PORT'] = 25
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['FLASKY_MAIL_SUBJECT_PREFIX'] = '[lty Flasky]'
+app.config['FLASKY_MAIL_SENDER'] = '996651583@qq.com'
+app.config['FLASKY_ADMIN'] = os.environ.get('FLASKY_ADMIN')
+mail = flask_mail.Mail(app)
+
+def async_send(message):
+    with app.app_context():
+        mail.send(msg)
+def send_email(to, subject, template_file, **kwargs):
+    msg = flask_mail.Message(subject=\
+            app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + subject, 
+            sender=app.config['FLASKY_MAIL_SENDER'], recipients=[to])
+    msg.body = flask.render_template(template_file+'.txt', **kwargs)
+    msg.html = flask.render_template(template_file+'.html', **kwargs)
+
+    thread = threading.Thread(target=async_send, args=(msg,))
+    thread.daemon = True
+    thread.start()
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -75,6 +105,8 @@ def index():
             user = User(user_name=form.name.data, 
                     password=form.password.data)
             db.session.add(user)
+            send_email(app.config['FLASKY_ADMIN'], 'New User',
+                    'mail/new_user', user=user)
         flask.session['name'] = form.name.data
         form.name.data = ''
         return flask.redirect(flask.url_for('index'))
@@ -95,7 +127,7 @@ def internal_error(error):
     return flask.render_template('500.html', 
             admin_email="liuty196888@gmail.com"), 500
 
-manager.add_command('shell', Shell(use_ipython=True, 
+manager.add_command('shell', flask_script.Shell(use_ipython=True, 
         make_context=lambda : \
                 dict(app=app, User=User, Role=Role, db=db)))
 if __name__ == '__main__':
