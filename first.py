@@ -52,7 +52,7 @@ mail = flask_mail.Mail(app)
 
 def async_send(message):
     with app.app_context():
-        mail.send(msg)
+        mail.send(message)
 def send_email(to, subject, template_file, **kwargs):
     msg = flask_mail.Message(subject=\
             app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + subject, 
@@ -99,6 +99,7 @@ def index():
     if form.validate_on_submit():
         users = User.query.filter_by(user_name=form.name.data).all()
         if users:
+            # session 的生存周期等于浏览器的存在周期，当浏览器关闭，session保存的内容都删去
             flask.session['known'] = True
         else:
             flask.session['known'] = False
